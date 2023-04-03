@@ -1,0 +1,56 @@
+#!/bin/sh
+
+xdg_file="$HOME/.icons/default/index.theme"
+gtk_file="$HOME/.config/gtk-3.0/settings.ini"
+xrdb_file="$HOME/.Xresources"
+
+# XDG
+if [ -f $xdg_file ]
+then
+	if grep -q '^Inherits=' $xdg_file 
+		then sed "s/^Inherits=.*/Inherits=$1/" -i $xdg_file
+	else
+		grep -q '^[icon theme]' || echo [icon theme] >> $xdg_file
+		echo Inherits=$1 >> $xdg_file
+	fi
+else
+	mkdir -p $HOME/.icons/default/
+	touch $xdg_file
+	echo [icon theme] >> $xdg_file
+	echo Inherits=$1 >> $xdg_file
+fi
+
+# GTK
+if [ -f $gtk_file ]
+then
+	if grep -q '^gtk-cursor-theme-name=' $gtk_file
+	then
+		sed "s/^gtk-cursor-theme-name=.*/gtk-cursor-theme-name=$1/" -i $gtk_file
+	else
+		grep -q '^[Settings]' $gtk_file || echo [Settings] >> gtk_file
+		echo gtk-cursor-theme-name=$1 >> $gtk_file
+	fi
+else
+	mkdir -p $HOME/.config/gtk-3.0/
+	touch $gtk_file
+	echo [Settings] >> $gtk_file
+	echo gtk-cursor-theme-name=$1 >> $gtk_file
+fi
+
+# XRDB
+if [ -f $xrdb_file ]
+then
+	if grep -q '^Xcursor.theme:' $xrdb_file
+	then 
+		sed "s/^Xcursor.theme:.*/Xcursor.theme: $1/" -i $xrdb_file
+	else
+		echo "Xcursor.theme: $1" >> $xrdb_file
+	fi
+else
+	touch $xrdb_file
+	echo Xcursor.theme: $1 >> $xrdb_file
+fi
+xrdb $xrdb_file
+
+# GNOME
+gsettings set org.gnome.desktop.interface cursor-theme "$1"
